@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  quickwit:
+    image: quickwit/quickwit:latest
+    ports:
+      - "7280:7280"
+    command: run
+
+  fluent-bit:
+    image: fluent/fluent-bit:latest
+    volumes:
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./parsers.conf:/fluent-bit/etc/parsers.conf
+      - /var/log:/var/log
+    depends_on:
+      - quickwit
