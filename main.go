@@ -1,33 +1,80 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"net/http"
+	"quickwit-go-demo/logger"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	jwtware "github.com/gofiber/jwt/v3"
+	"github.com/golang-jwt/jwt/v4"
+	"go.uber.org/zap"
 )
 
+var jwtSecret = []byte("supersecretkey")
+
 func main() {
-	jsonData := []byte(`
-	[
-		{"message":"hello world","level":"info","timestamp":"2026-02-25T10:00:00Z"},
-		{"message":"error happened","level":"error","timestamp":"2026-02-25T10:01:00Z"}
-	]`)
 
-	url := "http://localhost:7280/api/v1/logs/ingest"
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	// Zap logger
+	log, err := logger.New()
 	if err != nil {
 		panic(err)
 	}
+	defer log.Sync()
 
-	req.Header.Set("Content-Type", "application/json")
+	app := fiber.New()
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+	// Login route
+	app.Post("/login", func(c *fiber.Ctx) error {
+		type LoginInput struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
 
-	fmt.Println("Status:", resp.Status)
+		var input LoginInput
+		if err := c.BodyParser(&input); err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		// Hardcoded user (no DB)
+		if input.Username != "admin" || input.Password != "1234" {
+			log.Warn("login_failed",
+				zap.String("username", input.Username),
+				zap.String("reason", "invalid credentials"),
+			)
+			return fiber.ErrUnauthorized
+		}
+
+		// Create JWT
+		claims := jwt.MapClaims{
+			"username": input.Username,
+			"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		t, _ := token.SignedString(jwtSecret)
+
+		log.Info("login_success",
+			zap.String("username", input.Username),
+		)
+
+		return c.JSON(fiber.Map{
+			"token": t,
+		})
+	})
+
+	// Protected route
+	app.Use("/profile", jwtware.New(jwtware.Config{
+		SigningKey: jwtSecret,
+	}))
+
+	app.Get("/profile", func(c *fiber.Ctx) error {
+		user := c.Locals("user").(*jwt.Token)
+		claims := user.Claims.(jwt.MapClaims)
+
+		return c.JSON(fiber.Map{
+			"username": claims["username"],
+		})
+	})
+
+	app.Listen(":3000")
 }

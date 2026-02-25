@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "quickwit-demo",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

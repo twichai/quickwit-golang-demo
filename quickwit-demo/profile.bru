@@ -1,0 +1,27 @@
+meta {
+  name: profile
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/profile
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzIwNzU5ODIsInVzZXJuYW1lIjoiYWRtaW4ifQ.vN0tGGHIJl3p9yPCC56BAwoe8ELa04q1qU6IALxWFQU
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "1234"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

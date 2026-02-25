@@ -3,15 +3,31 @@ version: "3.9"
 services:
   quickwit:
     image: quickwit/quickwit:latest
+    platform: linux/amd64
     ports:
       - "7280:7280"
     command: run
+    volumes:
+      - quickwit-data:/quickwit/qwdata
 
+  quickwit-init:
+    image: curlimages/curl:latest
+    depends_on:
+      - quickwit
+    volumes:
+      - ./index-config.yaml:/index-config.yaml
+    entrypoint: >
+      sh -c "
+      sleep 10 &&
+      curl -X POST http://quickwit:7280/api/v1/indexes
+      -H 'Content-Type: application/yaml'
+      --data-binary @/index-config.yaml
+      "
   fluent-bit:
     image: fluent/fluent-bit:latest
     volumes:
-      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+      - ./logs:/app/logs:delegated
       - ./parsers.conf:/fluent-bit/etc/parsers.conf
-      - /var/log:/var/log
-    depends_on:
-      - quickwit
+      - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+volumes:
+  quickwit-data:

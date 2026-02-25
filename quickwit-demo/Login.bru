@@ -1,0 +1,28 @@
+meta {
+  name: Login
+  type: http
+  seq: 1
+}
+
+post {
+  url: http://localhost:3000/login?username=admin&password=12343
+  body: json
+  auth: inherit
+}
+
+params:query {
+  username: admin
+  password: 12343
+}
+
+body:json {
+  {
+    "username": "admin",
+    "password": "1234"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
