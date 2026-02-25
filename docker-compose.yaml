@@ -29,5 +29,16 @@ services:
       - ./logs:/app/logs:delegated
       - ./parsers.conf:/fluent-bit/etc/parsers.conf
       - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - quickwit
 volumes:
   quickwit-data:
