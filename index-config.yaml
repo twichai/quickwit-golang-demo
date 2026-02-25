@@ -1,34 +1,39 @@
 version: 0.7
 
-index_id: stackoverflow
+index_id: app-logs
 
 doc_mapping:
+  mode: dynamic
   field_mappings:
-    - name: title
+    - name: msg
+      type: text
+      stored: true
+    - name: status
+      type: i64
+      fast: true # for search status: >=400
+    - name: method
+      type: text
+      fast: true
+    - name: path
       type: text
       tokenizer: default
-      record: position
-      stored: true
-
-    - name: body
+    - name: request_id
       type: text
-      tokenizer: default
-      record: position
-      stored: true
-
+      fast: true # Search by ID to view only one person.
+    - name: latency
+      type: i64 # Stored in nanoseconds by Zap.
+      fast: true
     - name: creationDate
       type: datetime
       fast: true
-      input_formats:
-        - rfc3339
-      fast_precision: seconds
-
+      input_formats: [rfc3339]
   timestamp_field: creationDate
 
 search_settings:
   default_search_fields:
-    - title
-    - body
+    - msg
+    - path
+    - request_id
 
 indexing_settings:
   commit_timeout_secs: 30

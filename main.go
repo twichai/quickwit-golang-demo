@@ -2,6 +2,7 @@ package main
 
 import (
 	"quickwit-go-demo/logger"
+	"quickwit-go-demo/middleware" // เรียกใช้ middleware ที่เราแก้กันตะกี้
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -13,8 +14,7 @@ import (
 var jwtSecret = []byte("supersecretkey")
 
 func main() {
-
-	// Zap logger
+	// 1. Initialize Zap logger
 	log, err := logger.New()
 	if err != nil {
 		panic(err)
@@ -22,6 +22,10 @@ func main() {
 	defer log.Sync()
 
 	app := fiber.New()
+
+	// 2. ใช้ Middleware สำหรับเก็บ Log ท่องจำไว้ว่าต้องวางไว้บนสุดเสมอ
+	// เพื่อให้มันจับ Log ของทุก Request รวมถึง /login และ /profile
+	app.Use(middleware.RequestLogger(log))
 
 	// Login route
 	app.Post("/login", func(c *fiber.Ctx) error {
@@ -35,13 +39,21 @@ func main() {
 			return fiber.ErrBadRequest
 		}
 
+		// ดึง Request ID จาก Context (ที่ถูกสร้างใน Middleware) มาใช้ใน Log นี้
+		// เพื่อให้ Search ใน Quickwit แล้วเจอข้อมูลที่เชื่อมโยงกัน
+		requestId := c.GetRespHeader("X-Request-ID")
+
 		// Hardcoded user (no DB)
 		if input.Username != "admin" || input.Password != "1234" {
 			log.Warn("login_failed",
+				zap.String("request_id", requestId), // เชื่อมโยงกับ access log
 				zap.String("username", input.Username),
 				zap.String("reason", "invalid credentials"),
+				zap.String("ip", c.IP()),
 			)
-			return fiber.ErrUnauthorized
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized",
+			})
 		}
 
 		// Create JWT
@@ -51,9 +63,13 @@ func main() {
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		t, _ := token.SignedString(jwtSecret)
+		t, err := token.SignedString(jwtSecret)
+		if err != nil {
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
 
 		log.Info("login_success",
+			zap.String("request_id", requestId),
 			zap.String("username", input.Username),
 		)
 
@@ -62,19 +78,22 @@ func main() {
 		})
 	})
 
-	// Protected route
-	app.Use("/profile", jwtware.New(jwtware.Config{
+	// Protected routes (Grouping ช่วยให้อ่านง่ายขึ้น)
+	api := app.Group("/profile")
+	api.Use(jwtware.New(jwtware.Config{
 		SigningKey: jwtSecret,
 	}))
 
-	app.Get("/profile", func(c *fiber.Ctx) error {
+	api.Get("/", func(c *fiber.Ctx) error {
 		user := c.Locals("user").(*jwt.Token)
 		claims := user.Claims.(jwt.MapClaims)
 
 		return c.JSON(fiber.Map{
 			"username": claims["username"],
+			"message":  "This is a protected profile",
 		})
 	})
 
-	app.Listen(":3000")
+	log.Info("server_started", zap.String("port", "3000"))
+	app.Listen(":8080")
 }
