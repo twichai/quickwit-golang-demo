@@ -19,7 +19,7 @@ func New() (*zap.Logger, error) {
 	cfg := zap.NewProductionConfig()
 
 	cfg.EncoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout(time.RFC3339)
-	cfg.EncoderConfig.TimeKey = "creationDate"
+	cfg.EncoderConfig.TimeKey = "timestamp"
 
 	core := zapcore.NewCore(
 		zapcore.NewJSONEncoder(cfg.EncoderConfig),

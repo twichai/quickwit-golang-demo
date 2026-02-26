@@ -23,11 +23,11 @@ doc_mapping:
     - name: latency
       type: i64 # Stored in nanoseconds by Zap.
       fast: true
-    - name: creationDate
+    - name: timestamp
       type: datetime
       fast: true
       input_formats: [rfc3339]
-  timestamp_field: creationDate
+  timestamp_field: timestamp
 
 search_settings:
   default_search_fields:

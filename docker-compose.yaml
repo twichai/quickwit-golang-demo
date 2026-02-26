@@ -31,11 +31,12 @@ services:
       - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana-oss
     container_name: grafana
     ports:
       - "3000:3000"
     environment:
+      - GF_INSTALL_PLUGINS=https://github.com/quickwit-oss/quickwit-datasource/releases/download/v0.3.1/quickwit-quickwit-datasource-0.3.1.zip;quickwit-quickwit-datasource
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
