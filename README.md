@@ -65,9 +65,9 @@ Example `index-config.yaml`:
 index_id: stackoverflow
 
 doc_mapping:
-  timestamp_field: creationDate
+  timestamp_field: timestamp
   field_mappings:
-    - name: creationDate
+    - name: timestamp
       type: datetime
     - name: level
       type: text
@@ -128,7 +128,7 @@ Example:
    - Type: Elasticsearch
    - URL: `http://quickwit:7280`
    - Index: `stackoverflow`
-   - Time field: `creationDate`
+   - Time field: `timestamp`
 
 ---
 
@@ -160,7 +160,7 @@ username:john
 
 - Ensure Quickwit index exists
 - Check `commit_timeout_secs`
-- Confirm `creationDate` is mapped as datetime
+- Confirm `timestamp` is mapped as datetime
 - Verify time picker range in Grafana
 
 ### Logs delayed in Docker (macOS)
@@ -194,3 +194,7 @@ Avoid mixing local file writes with Docker bind mounts.
 ---
 
 This stack provides near real-time log ingestion (~5 seconds commit window) and searchable dashboards.
+
+---
+
+![grafana status](public/grafana_status.png)
